@@ -8,3 +8,5 @@ The check-certificate-chains.sh just reports on WRONG certificates. Run with "-v
 
 3/7/2018 Thijs Kaper.
 
+https://github.com/atkaper/k8s-check-certificate-chains
+
