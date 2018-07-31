@@ -14,12 +14,33 @@ cd "$(dirname "$(realpath "$0")")";
 
 for i in *.crt
 do
+   >report.txt
+   OK="true"
+
+   keyfile="`basename $i .crt`.key"
+   if test -f $keyfile
+   then
+      keysum=`openssl rsa -noout -modulus -in k8s-kube-system-wild-ssl-secret.key | openssl md5`
+      crtsum=`openssl x509 -noout -modulus -in k8s-kube-system-wild-ssl-secret.crt | openssl md5`
+      if [ "$keysum" != "$crtsum" ]
+      then
+         echo "ERROR key $keysum and crt $crtsum not matching, wrong md5 hash"  >>report.txt
+         OK="false"
+      else
+         if [ "$1" == "-v" ]
+         then
+            echo "OK $i key and crt same md5 hash $keysum" >>report.txt
+         fi
+      fi
+   else
+      echo "ERROR missing file $keyfile, unable to verify key matches crt" >>report.txt
+      OK="false"
+   fi
+
    rm -rf cert-0[0-9] >/dev/null 2>&1
    csplit -s -f cert- $i '%-----BEGIN CERTIFICATE-----%' '/-----BEGIN CERTIFICATE-----/' '{*}' 
 
-   OK="true"
 
-   >report.txt
    PREV=""
    for crt in `ls -1 cert-0* | sort`
    do
@@ -62,7 +83,7 @@ do
    else
       if [ "$1" == "-v" ]
       then
-         echo "OK $i"
+         echo "OK $i chain in order"
          cat report.txt
          echo
       fi
